@@ -258,22 +258,7 @@ GROUP BY a.description, c.description
 ORDER BY avg_medication_cost DESC ,alternative_medications DESC;
 ```
 
-
-## 2.Medication Effectiveness by Condition
-```sql
-SELECT  c.description as conditions, m.description as medication,
-    COUNT(*) as prescription_count,
-    ROUND(AVG(DATEDIFF(IFNULL(c.stop, CURDATE()), c.start)),2) as avg_condition_duration,
-    ROUND(AVG(m.totalcost),2) as avg_medication_cost
-FROM conditions c
-JOIN medications m ON c.encounter = m.encounter 
-    AND m.reasondescription = c.description
-GROUP BY c.description, m.description
-HAVING prescription_count > 5
-ORDER BY avg_condition_duration ASC, prescription_count DESC;
-```
-
-## 3.Comorbidity Analysis
+## 2.Comorbidity Analysis
 ```sql
 SELECT 
     c1.description as primary_condition,
