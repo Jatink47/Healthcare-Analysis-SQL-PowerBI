@@ -1,5 +1,9 @@
 # Healthcare-Analysis-SQL-PowerBI
 
+## Dasboard
+![alt image](https://github.com/Jatink47/Healthcare-Analysis-SQL-PowerBI/blob/main/Screenshot%202025-09-11%20033821.png)
+
+
 # SQL Queries
 
 ## 1. Encounter Types and Costs
