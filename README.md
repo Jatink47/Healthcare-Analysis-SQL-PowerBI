@@ -173,7 +173,7 @@ GROUP BY description
 ORDER BY condition_count DESC
 LIMIT 20;
 ```
-## Healthcare Utilization Analysis
+## Payer Analysis
 
 ## 1.Payer Coverage Effectiveness  for last one year in dataset 
  ```sql
@@ -231,6 +231,15 @@ SELECT
 FROM observations o
 JOIN patients p ON o.PATIENT = p.Id;
 ```
+
+## 5.zero payer count and their percentage
+
+```sql
+select   sum(case when PAYER_COVERAGE = 0 then 1 else 0 end) as zero_payer_count,
+         ROUND(sum(case when PAYER_COVERAGE = 0 then 1 else 0 end)/count(*)*100,2) as zero_payer_percentage
+from encounters
+```
+
 ## Disease Management Analysis
 
 ## 1.Allergy Impact on Treatment
