@@ -173,5 +173,109 @@ GROUP BY description
 ORDER BY condition_count DESC
 LIMIT 20;
 ```
+## Healthcare Utilization Analysis
+
+## 1.Payer Coverage Effectiveness  for last one year in dataset 
+ ```sql
+ SELECT 
+    py.name as payer_name,
+    COUNT(DISTINCT e.patient) as covered_patients,
+    AVG(e.payer_coverage/e.total_claim_cost * 100) as avg_coverage_percentage,
+    SUM(e.total_claim_cost) as total_claims,
+    SUM(e.payer_coverage) as total_coverage
+FROM payers py
+JOIN encounters e ON py.id = e.payer
+WHERE e.total_claim_cost > 0
+GROUP BY py.id, py.name 
+ORDER BY avg_coverage_percentage DESC;
+```
+
+## 2.Provider Performance Analysis
+```sql
+SELECT 
+    pv.name as provider_name,
+    pv.speciality,
+    o.name as organization,
+    COUNT(e.id) as total_encounters,
+    round(AVG(e.total_claim_cost),2) as avg_encounter_cost,
+    COUNT(DISTINCT e.patient) as unique_patients,
+    round(AVG(DATEDIFF(e.stop, e.start))) as avg_days_of_stay
+FROM providers pv
+JOIN organizations o ON pv.organization = o.id
+JOIN encounters e ON pv.id = e.provider
+WHERE e.start BETWEEN '2019-01-01' AND '2020-12-31'
+GROUP BY pv.id, pv.name, pv.speciality, o.name
+ORDER BY total_encounters DESC;
+```
+## 3.Patient Journey - Conditions to Treatments  highlighting complex cases (procdure > 2) 
+```sql
+SELECT 
+    p.gender, p.race,
+    c.description as conditions,
+    COUNT(DISTINCT pr.code) as unique_procedures,
+    round(AVG(pr.base_cost),2) as avg_procedure_cost,
+    COUNT(DISTINCT m.code) as unique_medications
+FROM patients p
+JOIN conditions c ON p.id = c.patient
+LEFT JOIN procedures pr ON c.encounter = pr.encounter
+LEFT JOIN medications m ON c.encounter = m.encounter
+GROUP BY p.gender, p.race, c.description
+HAVING COUNT(DISTINCT pr.code) > 2
+ORDER BY avg_procedure_cost DESC;
+```
+## 4. Patient Observation
+```sql
+SELECT 
+    o.PATIENT, o.DATE, o.DESCRIPTION, o.VALUE, o.UNITS,
+    p.FIRST, p.LAST, p.GENDER
+FROM observations o
+JOIN patients p ON o.PATIENT = p.Id;
+```
+## Disease Management Analysis
+
+## 1.Allergy Impact on Treatment
+```sql
+SELECT 
+    a.description as allergy,
+    c.description as conditions,
+    COUNT(DISTINCT m.code) as alternative_medications,
+    ROUND(AVG(m.totalcost),2) as avg_medication_cost
+FROM allergies a
+JOIN patients p ON a.patient = p.Id
+JOIN conditions c ON p.Id = c.patient
+JOIN medications m ON c.encounter = m.encounter
+WHERE a.stop IS NULL
+GROUP BY a.description, c.description
+ORDER BY avg_medication_cost DESC ,alternative_medications DESC;
+```
 
 
+## 2.Medication Effectiveness by Condition
+```sql
+SELECT  c.description as conditions, m.description as medication,
+    COUNT(*) as prescription_count,
+    ROUND(AVG(DATEDIFF(IFNULL(c.stop, CURDATE()), c.start)),2) as avg_condition_duration,
+    ROUND(AVG(m.totalcost),2) as avg_medication_cost
+FROM conditions c
+JOIN medications m ON c.encounter = m.encounter 
+    AND m.reasondescription = c.description
+GROUP BY c.description, m.description
+HAVING prescription_count > 5
+ORDER BY avg_condition_duration ASC, prescription_count DESC;
+```
+
+## 3.Comorbidity Analysis
+```sql
+SELECT 
+    c1.description as primary_condition,
+    c2.description as secondary_condition,
+    COUNT(*) as co_occurrence_count,
+    round(AVG(e.total_claim_cost),2) as avg_total_cost
+FROM conditions c1
+JOIN conditions c2 ON c1.patient = c2.patient AND c1.code != c2.code
+JOIN encounters e ON c1.encounter = e.id
+WHERE c1.start <= c2.start
+GROUP BY c1.description, c2.description
+HAVING co_occurrence_count > 10
+ORDER BY co_occurrence_count DESC;
+```sql
